@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow anyone to read users collection
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+    
+    // Equipment collection - public read, authenticated write
+    match /equipment/{equipmentId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Borrow history - authenticated read/write
+    match /borrow_history/{historyId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Sales history - authenticated read/write
+    match /sales_history/{historyId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Categories - public read, authenticated write
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}
