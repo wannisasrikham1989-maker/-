@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - ระบบยืม-คืนครุภัณฑ์</title>
+    <link rel="icon" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/fonts.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 24px; }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            margin-left: 10px;
+        }
+        .btn-logout { background: rgba(255,255,255,0.2); color: white; }
+        .btn-logout:hover { background: rgba(255,255,255,0.3); }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card h3 { font-size: 36px; color: #667eea; margin-bottom: 5px; }
+        .stat-card p { color: #666; }
+        
+        .content { padding: 20px; }
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-body { padding: 20px; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th { background: #f8f9fa; font-weight: 600; }
+        
+        .btn-add { background: #28a745; color: white; }
+        .btn-edit { background: #ffc107; color: #333; }
+        .btn-delete { background: #dc3545; color: white; }
+        .btn-sell { background: #e67e22; color: white; }
+        .btn-return { background: #6c5ce7; color: white; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+        }
+        
+        .tabs { display: flex; border-bottom: 2px solid #e0e0e0; }
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+        .tab.active {
+            border-bottom-color: #667eea;
+            color: #667eea;
+            font-weight: 600;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .search-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-filter input, .search-filter select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+        }
+        .search-filter input { flex: 1; }
+        
+        .status-available { color: #28a745; font-weight: 600; }
+        .status-borrowed { color: #dc3545; font-weight: 600; }
+        
+        .loading { text-align: center; padding: 50px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1><i class="fas fa-cog"></i> Admin Dashboard</h1>
+            <p id="adminName">Loading...</p>
+        </div>
+        <button class="btn btn-logout" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+        </button>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3 id="totalEquipment">0</h3>
+            <p>ครุภัณฑ์ทั้งหมด</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="availableCount">0</h3>
+            <p>พร้อมยืม</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="borrowedCount">0</h3>
+            <p>ถูกยืม</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="overdueCount">0</h3>
+            <p>ค้างคืน</p>
+        </div>
+    </div>
+    
+    <div class="content">
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('equipment')">ครุภัณฑ์</div>
+            <div class="tab" onclick="showTab('borrow')">ประวัติการยืม-คืน</div>
+            <div class="tab" onclick="showTab('sales')">ประวัติการขาย</div>
+        </div>
+        
+        <!-- Tab: Equipment -->
+        <div id="tab-equipment" class="tab-content active">
+            <div class="card">
+                <div class="card-header">
+                    <h3>จัดการครุภัณฑ์</h3>
+                    <button class="btn btn-add" onclick="showAddModal()">
+                        <i class="fas fa-plus"></i> เพิ่มครุภัณฑ์
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="search-filter">
+                        <input type="text" id="searchInput" placeholder="ค้นหาชื่อครุภัณฑ์..." onkeyup="filterEquipment()">
+                        <select id="categoryFilter" onchange="filterEquipment()">
+                            <option value="">ทุกหมวดหมู่</option>
+                        </select>
+                        <select id="statusFilter" onchange="filterEquipment()">
+                            <option value="">ทุกสถานะ</option>
+                            <option value="available">พร้อมยืม</option>
+                            <option value="borrowed">ถูกยืม</option>
+                        </select>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>รหัส</th>
+                                <th>ชื่อครุภัณฑ์</th>
+                                <th>หมวดหมู่</th>
+                                <th>ยี่ห้อ</th>
+                                <th>สถานะ</th>
+                                <th>ผู้ยืม</th>
+                                <th>การจัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="equipmentTable">
+                            <tr><td colspan="7" class="loading">กำลังโหลด...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab: Borrow History -->
+        <div id="tab-borrow" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3>ประวัติการยืม-คืน</h3>
+                </div>
+                <div class="card-body">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>วันที่</th>
+                                <th>รหัสครุภัณฑ์</th>
+                                <th>ชื่อครุภัณฑ์</th>
+                                <th>ผู้ยืม</th>
+                                <th>การดำเนินการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="borrowHistoryTable">
+                            <tr><td colspan="5" class="loading">กำลังโหลด...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab: Sales History -->
+        <div id="tab-sales" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3>ประวัติการขายสินค้า</h3>
+                </div>
+                <div class="card-body">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>วันที่ขาย</th>
+                                <th>รหัสครุภัณฑ์</th>
+                                <th>ชื่อสินค้า</th>
+                                <th>หมวดหมู่</th>
+                                <th>ราคาขาย</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesHistoryTable">
+                            <tr><td colspan="5" class="loading">กำลังโหลด...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Modal -->
+    <div id="equipmentModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5);">
+        <div style="background:white; margin:50px auto; padding:30px; border-radius:10px; max-width:500px;">
+            <h2 id="modalTitle" style="margin-bottom:20px;">เพิ่มครุภัณฑ์</h2>
+            <form id="equipmentForm">
+                <input type="hidden" id="equipmentId">
+                <div class="form-group">
+                    <label>ชื่อครุภัณฑ์</label>
+                    <input type="text" id="equipmentName" required>
+                </div>
+                <div class="form-group">
+                    <label>หมวดหมู่</label>
+                    <select id="equipmentCategory" required>
+                        <option value="">เลือกหมวดหมู่</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ยี่ห้อ</label>
+                    <input type="text" id="equipmentBrand">
+                </div>
+                <div class="form-group">
+                    <label>ราคา</label>
+                    <input type="number" id="equipmentPrice" min="0">
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button type="submit" class="btn btn-add" style="flex:1;">บันทึก</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZd5KZQOLkMKQUj2kQGuZqqSoFRm38z6U",
+            authDomain: "equipment-system-db.firebaseapp.com",
+            projectId: "equipment-system-db",
+            storageBucket: "equipment-system-db.firebasestorage.app",
+            messagingSenderId: "429907429862",
+            appId: "1:429907429862:web:82d2ab95a7864244f3ae27",
+            measurementId: "G-7BLD4GBHL5"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        let currentUser = null;
+        let allEquipment = [];
+        let allCategories = [];
+        
+        // Check auth
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.replace('firebase-login.html');
+                return;
+            }
+            
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            if (!userDoc.exists || userDoc.data().role !== 'admin') {
+                window.location.replace('firebase-user.html');
+                return;
+            }
+            
+            currentUser = { id: user.uid, ...userDoc.data() };
+            document.getElementById('adminName').textContent = currentUser.fullName;
+            
+            loadCategories();
+            loadEquipment();
+            loadBorrowHistory();
+            loadSalesHistory();
+        });
+        
+        async function loadCategories() {
+            const snapshot = await db.collection('categories').orderBy('name').get();
+            allCategories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            const select = document.getElementById('categoryFilter');
+            const modalSelect = document.getElementById('equipmentCategory');
+            
+            select.innerHTML = '<option value="">ทุกหมวดหมู่</option>';
+            modalSelect.innerHTML = '<option value="">เลือกหมวดหมู่</option>';
+            
+            allCategories.forEach(cat => {
+                select.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+                modalSelect.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+            });
+        }
+        
+        async function loadEquipment() {
+            const snapshot = await db.collection('equipment').orderBy('createdAt', 'desc').get();
+            allEquipment = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderEquipment(allEquipment);
+            updateStats();
+        }
+        
+        function renderEquipment(equipment) {
+            const tbody = document.getElementById('equipmentTable');
+            
+            if (equipment.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">ไม่พบข้อมูลครุภัณฑ์</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = equipment.map(item => {
+                const statusClass = item.status === 'available' ? 'status-available' : 'status-borrowed';
+                const statusText = item.status === 'available' ? 'พร้อมยืม' : 'ถูกยืม';
+                
+                return `
+                    <tr>
+                        <td>${item.id?.slice(-6) || '-'}</td>
+                        <td>${item.name}</td>
+                        <td>${item.category || '-'}</td>
+                        <td>${item.brand || '-'}</td>
+                        <td class="${statusClass}">${statusText}</td>
+                        <td>${item.borrowerId || '-'}</td>
+                        <td>
+                            <button class="btn btn-edit" onclick="editEquipment('${item.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            ${item.status === 'borrowed' ? `
+                                <button class="btn btn-return" onclick="returnEquipment('${item.id}')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-sell" onclick="sellEquipment('${item.id}')">
+                                <i class="fas fa-dollar-sign"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function updateStats() {
+            const total = allEquipment.length;
+            const available = allEquipment.filter(e => e.status === 'available').length;
+            const borrowed = allEquipment.filter(e => e.status === 'borrowed').length;
+            
+            document.getElementById('totalEquipment').textContent = total;
+            document.getElementById('availableCount').textContent = available;
+            document.getElementById('borrowedCount').textContent = borrowed;
+            document.getElementById('overdueCount').textContent = borrowed;
+        }
+        
+        function filterEquipment() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('categoryFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            
+            const filtered = allEquipment.filter(item => {
+                const matchSearch = item.name.toLowerCase().includes(search);
+                const matchCategory = !category || item.category === category;
+                const matchStatus = !status || item.status === status;
+                return matchSearch && matchCategory && matchStatus;
+            });
+            
+            renderEquipment(filtered);
+        }
+        
+        function showAddModal() {
+            document.getElementById('modalTitle').textContent = 'เพิ่มครุภัณฑ์';
+            document.getElementById('equipmentId').value = '';
+            document.getElementById('equipmentForm').reset();
+            document.getElementById('equipmentModal').style.display = 'block';
+        }
+        
+        function editEquipment(id) {
+            const item = allEquipment.find(e => e.id === id);
+            if (!item) return;
+            
+            document.getElementById('modalTitle').textContent = 'แก้ไขครุภัณฑ์';
+            document.getElementById('equipmentId').value = id;
+            document.getElementById('equipmentName').value = item.name;
+            document.getElementById('equipmentCategory').value = item.category || '';
+            document.getElementById('equipmentBrand').value = item.brand || '';
+            document.getElementById('equipmentPrice').value = item.price || '';
+            document.getElementById('equipmentModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('equipmentModal').style.display = 'none';
+        }
+        
+        document.getElementById('equipmentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('equipmentId').value;
+            const data = {
+                name: document.getElementById('equipmentName').value,
+                category: document.getElementById('equipmentCategory').value,
+                brand: document.getElementById('equipmentBrand').value,
+                price: parseFloat(document.getElementById('equipmentPrice').value) || 0
+            };
+            
+            if (id) {
+                await db.collection('equipment').doc(id).update({
+                    ...data,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } else {
+                await db.collection('equipment').add({
+                    ...data,
+                    status: 'available',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+            
+            closeModal();
+            loadEquipment();
+        });
+        
+        async function returnEquipment(id) {
+            if (!confirm('ต้องการคืนครุภัณฑ์นี้?')) return;
+            
+            await db.collection('equipment').doc(id).update({
+                status: 'available',
+                borrowerId: null,
+                returnedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            await db.collection('borrow_history').add({
+                equipmentId: id,
+                userId: currentUser.id,
+                action: 'return',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            loadEquipment();
+            loadBorrowHistory();
+        }
+        
+        async function sellEquipment(id) {
+            const item = allEquipment.find(e => e.id === id);
+            if (!item) return;
+            
+            const price = prompt('กรุณากรอกราคาขาย:', item.price || '0');
+            if (price === null) return;
+            
+            const batch = db.batch();
+            
+            batch.set(db.collection('sales_history').doc(), {
+                equipmentId: id,
+                equipmentName: item.name,
+                equipmentCategory: item.category,
+                price: parseFloat(price) || 0,
+                soldAt: firebase.firestore.FieldValue.serverTimestamp(),
+                soldBy: currentUser.id
+            });
+            
+            batch.delete(db.collection('equipment').doc(id));
+            
+            await batch.commit();
+            loadEquipment();
+            loadSalesHistory();
+        }
+        
+        async function loadBorrowHistory() {
+            const snapshot = await db.collection('borrow_history')
+                .orderBy('timestamp', 'desc')
+                .limit(100)
+                .get();
+            
+            const history = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const tbody = document.getElementById('borrowHistoryTable');
+            
+            if (history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">ไม่พบประวัติ</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = history.map(h => {
+                const date = h.timestamp?.toDate?.()?.toLocaleString('th-TH') || '-';
+                return `
+                    <tr>
+                        <td>${date}</td>
+                        <td>${h.equipmentId?.slice(-6) || '-'}</td>
+                        <td>${h.equipmentName || '-'}</td>
+                        <td>${h.userId || '-'}</td>
+                        <td>${h.action === 'borrow' ? 'ยืม' : 'คืน'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        async function loadSalesHistory() {
+            const snapshot = await db.collection('sales_history')
+                .orderBy('soldAt', 'desc')
+                .limit(100)
+                .get();
+            
+            const sales = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const tbody = document.getElementById('salesHistoryTable');
+            
+            if (sales.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">ไม่พบประวัติการขาย</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = sales.map(s => {
+                const date = s.soldAt?.toDate?.()?.toLocaleString('th-TH') || '-';
+                return `
+                    <tr>
+                        <td>${date}</td>
+                        <td>${s.equipmentId?.slice(-6) || '-'}</td>
+                        <td>${s.equipmentName || '-'}</td>
+                        <td>${s.equipmentCategory || '-'}</td>
+                        <td>${s.price?.toLocaleString() || 0} บาท</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            document.querySelector(`.tab[onclick="showTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+        
+        async function logout() {
+            await auth.signOut();
+            window.location.replace('firebase-login.html');
+        }
+    </script>
+</body>
+</html>

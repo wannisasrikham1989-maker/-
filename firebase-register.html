@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ลงทะเบียน - ระบบยืม-คืนครุภัณฑ์</title>
+    <link rel="icon" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/fonts.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .register-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h1><i class="fas fa-user-plus"></i> ลงทะเบียน</h1>
+        <p class="subtitle">สร้างบัญชีผู้ใช้ใหม่</p>
+        
+        <div id="error" class="error"></div>
+        <div id="success" class="success">ลงทะเบียนสำเร็จ! กำลังนำไปสู่หน้าเข้าสู่ระบบ...</div>
+        
+        <form id="registerForm">
+            <div class="form-group">
+                <label>ชื่อ-นามสกุล</label>
+                <input type="text" id="fullName" placeholder="กรอกชื่อ-นามสกุล" required>
+            </div>
+            <div class="form-group">
+                <label>อีเมล</label>
+                <input type="email" id="email" placeholder="กรอกอีเมล" required>
+            </div>
+            <div class="form-group">
+                <label>รหัสผ่าน</label>
+                <input type="password" id="password" placeholder="กรอกรหัสผ่าน (อย่างน้อย 6 ตัว)" required minlength="6">
+            </div>
+            <div class="form-group">
+                <label>ยืนยันรหัสผ่าน</label>
+                <input type="password" id="confirmPassword" placeholder="กรอกรหัสผ่านอีกครั้ง" required>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-check"></i> ลงทะเบียน
+            </button>
+        </form>
+        
+        <button class="btn btn-secondary" onclick="window.location.href='firebase-login.html'">
+            <i class="fas fa-arrow-left"></i> กลับไปหน้าเข้าสู่ระบบ
+        </button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZd5KZQOLkMKQUj2kQGuZqqSoFRm38z6U",
+            authDomain: "equipment-system-db.firebaseapp.com",
+            projectId: "equipment-system-db",
+            storageBucket: "equipment-system-db.firebasestorage.app",
+            messagingSenderId: "429907429862",
+            appId: "1:429907429862:web:82d2ab95a7864244f3ae27",
+            measurementId: "G-7BLD4GBHL5"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorDiv = document.getElementById('error');
+            const successDiv = document.getElementById('success');
+
+            if (password !== confirmPassword) {
+                errorDiv.textContent = 'รหัสผ่านไม่ตรงกัน';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+                return;
+            }
+
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                
+                await db.collection('users').doc(userCredential.user.uid).set({
+                    email: email,
+                    fullName: fullName,
+                    role: 'user',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                successDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+                
+                setTimeout(() => {
+                    window.location.href = 'firebase-login.html';
+                }, 2000);
+            } catch (error) {
+                const messages = {
+                    'auth/email-already-in-use': 'อีเมลนี้ถูกใช้งานแล้ว',
+                    'auth/invalid-email': 'รูปแบบอีเมลไม่ถูกต้อง',
+                    'auth/weak-password': 'รหัสผ่านต้องมีอย่างน้อย 6 ตัว'
+                };
+                errorDiv.textContent = messages[error.code] || 'เกิดข้อผิดพลาด';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

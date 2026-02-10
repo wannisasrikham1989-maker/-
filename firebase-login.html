@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ - ระบบยืม-คืนครุภัณฑ์</title>
+    <link rel="icon" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/fonts.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo i {
+            font-size: 60px;
+            color: #667eea;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            margin-top: 10px;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <i class="fas fa-boxes-stacked"></i>
+        </div>
+        <h1>ระบบยืม-คืนครุภัณฑ์</h1>
+        <p class="subtitle">กรุณาเข้าสู่ระบบ</p>
+        
+        <div id="error" class="error"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">อีเมล</label>
+                <input type="email" id="email" placeholder="กรอกอีเมล" required>
+            </div>
+            <div class="form-group">
+                <label for="password">รหัสผ่าน</label>
+                <input type="password" id="password" placeholder="กรอกรหัสผ่าน" required>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ
+            </button>
+        </form>
+        
+        <button class="btn btn-secondary" onclick="window.location.href='firebase-register.html'">
+            <i class="fas fa-user-plus"></i> ลงทะเบียนผู้ใช้ใหม่
+        </button>
+        
+        <button class="btn btn-secondary" onclick="window.location.href='firebase-register-admin.html'">
+            <i class="fas fa-user-shield"></i> ลงทะเบียนผู้ดูแลระบบ
+        </button>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZd5KZQOLkMKQUj2kQGuZqqSoFRm38z6U",
+            authDomain: "equipment-system-db.firebaseapp.com",
+            projectId: "equipment-system-db",
+            storageBucket: "equipment-system-db.firebasestorage.app",
+            messagingSenderId: "429907429862",
+            appId: "1:429907429862:web:82d2ab95a7864244f3ae27",
+            measurementId: "G-7BLD4GBHL5"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ป้องกัน back button
+        window.history.pushState(null, null, window.location.href);
+        window.addEventListener('popstate', function() {
+            window.history.pushState(null, null, window.location.href);
+        });
+
+        // เช็ค auth state
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists && userDoc.data().role === 'admin') {
+                    window.location.replace('firebase-admin.html');
+                } else {
+                    window.location.replace('firebase-user.html');
+                }
+            }
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error');
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const userDoc = await db.collection('users').doc(userCredential.user.uid).get();
+                
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    if (userData.role === 'admin') {
+                        window.location.replace('firebase-admin.html');
+                    } else {
+                        window.location.replace('firebase-user.html');
+                    }
+                } else {
+                    window.location.replace('firebase-user.html');
+                }
+            } catch (error) {
+                errorDiv.textContent = getErrorMessage(error.code);
+                errorDiv.style.display = 'block';
+            }
+        });
+
+        function getErrorMessage(code) {
+            const messages = {
+                'auth/user-not-found': 'ไม่พบบัญชีผู้ใช้นี้',
+                'auth/wrong-password': 'รหัสผ่านไม่ถูกต้อง',
+                'auth/invalid-email': 'รูปแบบอีเมลไม่ถูกต้อง',
+                'auth/too-many-requests': 'มีการพยายามเข้าสู่ระบบมากเกินไป กรุณาลองใหม่ภายหลัง'
+            };
+            return messages[code] || 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+        }
+    </script>
+</body>
+</html>
