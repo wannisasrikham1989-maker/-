@@ -1,0 +1,18 @@
+# Firebase
+.firebase/
+firebase-debug.log
+
+# Node
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Private files
+service-account-key.json
+*.local.json
