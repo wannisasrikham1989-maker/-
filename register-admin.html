@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สมัคร Admin - ระบบยืมครุภัณฑ์</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/fonts.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            font-size: 20px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+        
+        body {
+            font-family: 'Sarabun', 'Kanit', 'TH Sarabun New',
+                         'Angsana New', 'Cordia New',
+                         'Microsoft Sans Serif', 'Tahoma', 
+                         'Arial Unicode MS', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2em 1em;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Header ด้านบน */
+        .page-header {
+            text-align: center;
+            margin-bottom: 2em;
+            color: white;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        .page-header h1 {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 0.3em;
+        }
+        
+        .page-header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .page-header .admin-note {
+            margin-top: 15px;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: inline-block;
+            font-weight: 600;
+        }
+        
+        /* กรอบฟอร์มตรงกลาง */
+        .register-box {
+            background: white;
+            padding: 2.5em;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .register-box h2 {
+            color: #667eea;
+            margin-bottom: 0.5em;
+            text-align: center;
+            font-size: 1.8em;
+        }
+        
+        .register-box .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 1.5em;
+            font-size: 1em;
+        }
+        
+        .form-group {
+            margin-bottom: 1em;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5em;
+            color: #333;
+            font-weight: 600;
+            font-size: 1em;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.9em 1.2em;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-group input.error {
+            border-color: #dc3545;
+        }
+        
+        .error-message {
+            color: #dc3545;
+            font-size: 0.9em;
+            margin-top: 0.3em;
+            display: none;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1em;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 1em;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 0.8em;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .alert {
+            padding: 1em 1.2em;
+            border-radius: 8px;
+            margin-bottom: 1em;
+            font-size: 1em;
+            display: none;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.2em 0;
+            color: #999;
+            font-size: 1em;
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        
+        .divider span {
+            padding: 0 1em;
+        }
+        
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 1em;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 500px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .page-header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header ด้านบน -->
+    <div class="page-header">
+        <h1><i class="fas fa-user-shield"></i> สมัคร Admin</h1>
+        <p>เข้าถึงระบบจัดการครุภัณฑ์ทั้งหมด</p>
+        <div class="admin-note">
+            <i class="fas fa-key"></i> ต้องมีรหัสผ่านพิเศษเพื่อสมัครเป็น Admin
+        </div>
+    </div>
+    
+    <!-- กรอบฟอร์มตรงกลาง -->
+    <div class="register-box">
+        <h2>สมัครสมาชิก Admin</h2>
+        <p class="subtitle">กรุณากรอกข้อมูลด้านล่างให้ครบถ้วน</p>
+        
+        <div id="alertSuccess" class="alert alert-success"></div>
+        <div id="alertError" class="alert alert-error"></div>
+        
+        <form id="registerForm" onsubmit="register(event)">
+            <div class="form-group">
+                <label>ชื่อผู้ใช้ * <span style="color: #666; font-weight: normal;">(อย่างน้อย 3 ตัวอักษร)</span></label>
+                <input type="text" id="username" placeholder="กรอกชื่อผู้ใช้" required minlength="3" autocomplete="username">
+                <div class="error-message" id="usernameError"></div>
+            </div>
+            
+            <div class="form-group">
+                <label>รหัสผ่าน * <span style="color: #666; font-weight: normal;">(อย่างน้อย 6 ตัวอักษร)</span></label>
+                <input type="password" id="password" placeholder="กรอกรหัสผ่าน" required minlength="6" autocomplete="new-password">
+                <div class="error-message" id="passwordError"></div>
+            </div>
+            
+            <div class="form-group">
+                <label>ยืนยันรหัสผ่าน *</label>
+                <input type="password" id="confirmPassword" placeholder="กรอกรหัสผ่านอีกครั้ง" required autocomplete="new-password">
+                <div class="error-message" id="confirmPasswordError"></div>
+            </div>
+            
+            <div class="form-group">
+                <label>ชื่อ-นามสกุล *</label>
+                <input type="text" id="fullName" placeholder="กรอกชื่อ-นามสกุล" required>
+                <div class="error-message" id="fullNameError"></div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>อีเมล *</label>
+                    <input type="email" id="email" placeholder="กรอกอีเมล" required>
+                    <div class="error-message" id="emailError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label>เบอร์โทร *</label>
+                    <input type="tel" id="phone" placeholder="0xx-xxx-xxxx" required pattern="[0-9\-\s]{9,}">
+                    <div class="error-message" id="phoneError"></div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>แผนก/ฝ่าย *</label>
+                <select id="department" required>
+                    <option value="">-- เลือกแผนก --</option>
+                    <option value="IT">IT / เทคโนโลยีสารสนเทศ</option>
+                    <option value="HR">HR / ทรัพยากรบุคคล</option>
+                    <option value="Finance">Finance / การเงิน</option>
+                    <option value="Marketing">Marketing / การตลาด</option>
+                    <option value="Operations">Operations / ปฏิบัติการ</option>
+                    <option value="Admin">Admin / ธุรการ</option>
+                    <option value="Other">อื่นๆ</option>
+                </select>
+                <div class="error-message" id="departmentError"></div>
+            </div>
+            
+            <div class="form-group">
+                <label style="color: #667eea;">
+                    <i class="fas fa-key"></i> รหัสผ่านพิเศษสำหรับ Admin *
+                </label>
+                <input type="password" id="adminCode" placeholder="กรอกรหัสผ่านพิเศษ (รหัส: admin123)" required>
+                <div class="error-message" id="adminCodeError"></div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+                <i class="fas fa-user-plus"></i> สมัครสมาชิก Admin
+            </button>
+            
+            <div class="divider">
+                <span>หรือ</span>
+            </div>
+            
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='login.html'">
+                <i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ
+            </button>
+            
+            <a href="login.html" class="back-link">
+                <i class="fas fa-arrow-left"></i> กลับไปหน้าเข้าสู่ระบบ
+            </a>
+        </form>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        const ADMIN_CODE = 'admin123';
+        
+        function showAlert(type, message) {
+            const alert = document.getElementById('alert' + (type === 'success' ? 'Success' : 'Error'));
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => alert.style.display = 'none', 5000);
+        }
+        
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.style.display = 'none';
+                el.textContent = '';
+            });
+            document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
+        }
+        
+        function showFieldError(fieldId, message) {
+            const errorEl = document.getElementById(fieldId + 'Error');
+            const inputEl = document.getElementById(fieldId);
+            if (errorEl) {
+                errorEl.textContent = message;
+                errorEl.style.display = 'block';
+            }
+            if (inputEl) {
+                inputEl.classList.add('error');
+            }
+        }
+        
+        async function register(event) {
+            event.preventDefault();
+            clearErrors();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const department = document.getElementById('department').value;
+            const adminCode = document.getElementById('adminCode').value;
+            
+            let hasError = false;
+            
+            if (adminCode !== ADMIN_CODE) {
+                showFieldError('adminCode', 'รหัสผ่านพิเศษไม่ถูกต้อง');
+                hasError = true;
+            }
+            
+            if (password !== confirmPassword) {
+                showFieldError('confirmPassword', 'รหัสผ่านไม่ตรงกัน');
+                hasError = true;
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showFieldError('email', 'กรุณากรอกอีเมลให้ถูกต้อง');
+                hasError = true;
+            }
+            
+            const phoneRegex = /^[0-9\-\s]{9,}$/;
+            if (!phoneRegex.test(phone)) {
+                showFieldError('phone', 'กรุณากรอกเบอร์โทรให้ถูกต้อง');
+                hasError = true;
+            }
+            
+            if (hasError) return;
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังสมัคร...';
+            
+            try {
+                const response = await fetch(`${API_URL}/register-admin`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username,
+                        password,
+                        full_name: fullName,
+                        email,
+                        phone,
+                        department,
+                        admin_code: adminCode
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('success', 'สมัครสมาชิก Admin สำเร็จ! กรุณาเข้าสู่ระบบ');
+                    document.getElementById('registerForm').reset();
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    showAlert('error', data.error || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> สมัครสมาชิก Admin';
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showAlert('error', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่ภายหลัง');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> สมัครสมาชิก Admin';
+            }
+        }
+    </script>
+</body>
+</html>

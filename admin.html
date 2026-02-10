@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - ระบบยืมครุภัณฑ์</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/fonts.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Sarabun', 'Kanit', 'TH Sarabun New',
+                         'Angsana New', 'Cordia New',
+                         'Microsoft Sans Serif', sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { color: #667eea; font-family: 'Angsana New', sans-serif; }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: inherit;
+        }
+        .btn-logout { background: #dc3545; color: white; }
+        .btn-add { background: #28a745; color: white; }
+        .btn-edit { background: #ffc107; color: #333; }
+        .btn-delete { background: #dc3545; color: white; }
+        .btn-return { background: #6c5ce7; color: white; }
+        .btn-upload { background: #6c757d; color: white; }
+        .btn-sell { background: #e67e22; color: white; }
+        .content { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        
+        /* Search & Filter */
+        .search-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            display: flex;
+            gap: 10px;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+        }
+        .filter-box select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .stat-card h3 { font-size: 2em; color: #667eea; font-family: 'Angsana New', sans-serif; }
+        .stat-card p { color: #666; font-family: inherit; }
+        .stat-card.alert { background: #ffe6e6; border: 2px solid #dc3545; }
+        .stat-card.alert h3 { color: #dc3545; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: #667eea; color: white; }
+        
+        /* Equipment Image */
+        .equipment-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .equipment-image-placeholder {
+            width: 60px;
+            height: 60px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 24px;
+        }
+        
+        /* Overdue Alert */
+        .overdue-alert {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .overdue-alert h3 {
+            color: #856404;
+            margin-bottom: 10px;
+            font-family: 'Angsana New', sans-serif;
+        }
+        .overdue-item {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-content h2 { margin-bottom: 20px; font-family: 'Angsana New', sans-serif; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-family: inherit; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;
+        }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        
+        /* Drag & Drop Image Upload */
+        .drop-zone {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+            margin-bottom: 15px;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #28a745;
+            background: #e8f5e9;
+        }
+        .drop-zone i {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .drop-zone p {
+            color: #666;
+            font-family: inherit;
+        }
+        .drop-zone input {
+            display: none;
+        }
+        .image-preview-container {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .image-preview-large {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            display: none;
+        }
+        .image-preview-large-placeholder {
+            width: 150px;
+            height: 150px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 48px;
+        }
+        .upload-info {
+            flex: 1;
+            min-width: 200px;
+        }
+        .upload-info p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+            font-family: inherit;
+        }
+        
+        /* Tabs */
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; }
+        .tab {
+            padding: 10px 20px;
+            background: #e9ecef;
+            border: none;
+            border-radius: 5px 5px 0 0;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .tab.active { background: #667eea; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Loading */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1><i class="fas fa-cog"></i> Admin Dashboard</h1>
+            <p id="adminName">Loading...</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</button>
+        </div>
+    </div>
+    
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3 id="totalEquipment">0</h3>
+            <p>ครุภัณฑ์ทั้งหมด</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="availableEquipment">0</h3>
+            <p>พร้อมใช้งาน</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="borrowedEquipment">0</h3>
+            <p>ถูกยืม</p>
+        </div>
+        <div class="stat-card alert">
+            <h3 id="overdueCount">0</h3>
+            <p>เกินกำหนดคืน</p>
+        </div>
+    </div>
+    
+    <!-- Overdue Alert -->
+    <div id="overdueAlert" class="overdue-alert">
+        <h3><i class="fas fa-exclamation-triangle"></i> รายการที่เกินกำหนดคืน</h3>
+        <div id="overdueList"></div>
+    </div>
+    
+    <div class="content">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('equipment')">ครุภัณฑ์</button>
+            <button class="tab" onclick="switchTab('history')">ประวัติการยืม-คืน</button>
+            <button class="tab" onclick="switchTab('sales')"></i> ประวัติการชำระ</button>
+            <button class="tab" onclick="switchTab('add-equipment')">+ เพิ่มครุภัณฑ์</button>
+        </div>
+        
+        <!-- Tab: Equipment -->
+        <div id="tab-equipment" class="tab-content active">
+            <!-- Search & Filter -->
+            <div class="search-filter">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="ค้นหาครุภัณฑ์..." onkeyup="searchEquipment()">
+                    <button onclick="searchEquipment()"><i class="fas fa-search"></i></button>
+                </div>
+                <div class="filter-box">
+                    <select id="statusFilter" onchange="filterEquipment()">
+                        <option value="">ทุกสถานะ</option>
+                        <option value="พร้อมใช้งาน">พร้อมใช้งาน</option>
+                        <option value="ถูกยืม">ถูกยืม</option>
+                        <option value="ซ่อมบำรุง">ซ่อมบำรุง</option>
+                    </select>
+                </div>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>รูป</th>
+                        <th>รหัส</th>
+                        <th>ชื่อ</th>
+                        <th>หมวดหมู่</th>
+                        <th>ยี่ห้อ</th>
+                        <th>สถานะ</th>
+                        <th>สถานที่</th>
+                        <th>จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="equipmentTable"></tbody>
+            </table>
+        </div>
+        
+        <!-- Tab: History -->
+        <div id="tab-history" class="tab-content">
+            <table>
+                <thead>
+                    <tr>
+                        <th>รหัสการยืม</th>
+                        <th>ครุภัณฑ์</th>
+                        <th>ผู้ยืม</th>
+                        <th>วันที่ยืม</th>
+                        <th>กำหนดคืน</th>
+                        <th>วันที่คืนจริง</th>
+                        <th>สถานะ</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTable"></tbody>
+            </table>
+        </div>
+        
+        <!-- Tab: Sales History -->
+        <div id="tab-sales" class="tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3>ประวัติการขายสินค้า</h3>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>รหัสครุภัณฑ์</th>
+                        <th>ชื่อสินค้า</th>
+                        <th>หมวดหมู่</th>
+                        <th>ยี่ห้อ</th>
+                        <th>ผู้ซื้อ</th>
+                        <th>ผู้ชำระ</th>
+                        <th>วันที่ชำระ</th>
+                        <th>สถานะ</th>
+                    </tr>
+                </thead>
+                <tbody id="salesTable"></tbody>
+            </table>
+        </div>
+        
+        <!-- Tab: Add Equipment -->
+        <div id="tab-add-equipment" class="tab-content">
+            <h2>เพิ่มครุภัณฑ์ใหม่</h2>
+            <form id="addEquipmentForm">
+                <!-- Drag & Drop Image Upload -->
+                <div class="form-group">
+                    <label>รูปภาพครุภัณฑ์ (ลากมาวางได้)</label>
+                    <div class="drop-zone" id="addDropZone" onclick="document.getElementById('addImageFile').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>ลากรูปภาพมาวางที่นี่ หรือ คลิกเพื่อเลือกไฟล์</p>
+                        <p style="font-size: 12px; color: #999;">รองรับ: PNG, JPG, JPEG, GIF, WEBP</p>
+                        <input type="file" id="addImageFile" accept="image/*" onchange="handleAddImageSelect(event)">
+                    </div>
+                    <div class="image-preview-container">
+                        <div class="image-preview-large-placeholder" id="addImagePlaceholder">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <img id="addImagePreview" class="image-preview-large" src="" alt="Preview">
+                        <div class="upload-info">
+                            <p id="addFileInfo">ยังไม่ได้เลือกรูป</p>
+                            <input type="hidden" id="addImageUrl" name="image">
+                            <button type="button" id="addUploadBtn" class="btn-upload" onclick="uploadAddImage()" disabled>
+                                <i class="fas fa-upload"></i> อัปโหลดรูป
+                            </button>
+                            <button type="button" id="addClearBtn" class="btn-delete" onclick="clearAddImage()" style="display: none; margin-left: 5px;">
+                                <i class="fas fa-times"></i> ลบรูป
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>รหัสครุภัณฑ์</label>
+                    <input type="text" id="equipmentId" required placeholder="กรอกรหัสครุภัณฑ์">
+                </div>
+                <div class="form-group">
+                    <label>ชื่อครุภัณฑ์</label>
+                    <input type="text" id="equipmentName" required placeholder="กรอกชื่อครุภัณฑ์">
+                </div>
+                <div class="form-group">
+                    <label>หมวดหมู่ *</label>
+                    <select id="equipmentCategory" required>
+                        <option value="">-- เลือกหมวดหมู่ --</option>
+                        <option value="คอมพิวเตอร์">คอมพิวเตอร์</option>
+                        <option value="โน้ตบุ๊ค">โน้ตบุ๊ค</option>
+                        <option value="เคส">เคส</option>
+                        <option value="เก้าอี้">เก้าอี้</option>
+                        <option value="โต๊ะ">โต๊ะ</option>
+                        <option value="เมาส์">เมาส์</option>
+                        <option value="คีย์บอร์ด">คีย์บอร์ด</option>
+                        <option value="จอภาพ">จอภาพ</option>
+                        <option value="เครื่องพิมพ์">เครื่องพิมพ์</option>
+                        <option value="อื่นๆ">อื่นๆ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ยี่ห้อ</label>
+                    <input type="text" id="equipmentBrand" placeholder="กรอกยี่ห้อ">
+                </div>
+                <div class="form-group">
+                    <label>สถานะ</label>
+                    <select id="equipmentStatus" required>
+                        <option value="พร้อมใช้งาน">พร้อมใช้งาน</option>
+                        <option value="ถูกยืม">ถูกยืม</option>
+                        <option value="ซ่อมบำรุง">ซ่อมบำรุง</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>สถานที่</label>
+                    <input type="text" id="equipmentLocation" placeholder="กรอกสถานที่">
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-add">บันทึก</button>
+                    <button type="reset" style="background: #6c757d; color: white;">ล้าง</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal แก้ไข -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h2>แก้ไขครุภัณฑ์</h2>
+            <form id="editForm">
+                <input type="hidden" id="editEquipmentId">
+                
+                <!-- Drag & Drop Image Upload -->
+                <div class="form-group">
+                    <label>รูปภาพครุภัณฑ์ (ลากมาวางได้)</label>
+                    <div class="drop-zone" id="editDropZone" onclick="document.getElementById('editImageFile').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>ลากรูปภาพมาวางที่นี่ หรือ คลิกเพื่อเลือกไฟล์</p>
+                        <p style="font-size: 12px; color: #999;">รองรับ: PNG, JPG, JPEG, GIF, WEBP</p>
+                        <input type="file" id="editImageFile" accept="image/*" onchange="handleEditImageSelect(event)">
+                    </div>
+                    <div class="image-preview-container">
+                        <div class="image-preview-large-placeholder" id="editImagePlaceholder">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <img id="editImagePreview" class="image-preview-large" src="" alt="Preview">
+                        <div class="upload-info">
+                            <p id="editFileInfo">ยังไม่ได้เลือกรูป</p>
+                            <input type="hidden" id="editImageUrl" name="image">
+                            <button type="button" id="editUploadBtn" class="btn-upload" onclick="uploadEditImage()" disabled>
+                                <i class="fas fa-upload"></i> อัปโหลดรูป
+                            </button>
+                            <button type="button" id="editClearBtn" class="btn-delete" onclick="clearEditImage()" style="display: none; margin-left: 5px;">
+                                <i class="fas fa-times"></i> ลบรูป
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>ชื่อครุภัณฑ์</label>
+                    <input type="text" id="editName" required>
+                </div>
+                <div class="form-group">
+                    <label>หมวดหมู่ *</label>
+                    <select id="editCategory" required>
+                        <option value="">-- เลือกหมวดหมู่ --</option>
+                        <option value="คอมพิวเตอร์">คอมพิวเตอร์</option>
+                        <option value="โน้ตบุ๊ค">โน้ตบุ๊ค</option>
+                        <option value="เคส">เคส</option>
+                        <option value="เก้าอี้">เก้าอี้</option>
+                        <option value="โต๊ะ">โต๊ะ</option>
+                        <option value="เมาส์">เมาส์</option>
+                        <option value="คีย์บอร์ด">คีย์บอร์ด</option>
+                        <option value="จอภาพ">จอภาพ</option>
+                        <option value="เครื่องพิมพ์">เครื่องพิมพ์</option>
+                        <option value="อื่นๆ">อื่นๆ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ยี่ห้อ</label>
+                    <input type="text" id="editBrand">
+                </div>
+                <div class="form-group">
+                    <label>สถานะ</label>
+                    <select id="editStatus" required>
+                        <option value="พร้อมใช้งาน">พร้อมใช้งาน</option>
+                        <option value="ถูกยืม">ถูกยืม</option>
+                        <option value="ซ่อมบำรุง">ซ่อมบำรุง</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>สถานที่</label>
+                    <input type="text" id="editLocation">
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-edit">บันทึก</button>
+                    <button type="button" onclick="closeEditModal()" style="background: #6c757d; color: white;">ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let addSelectedFile = null;
+        let editSelectedFile = null;
+        
+        async function checkAuth() {
+            const res = await fetch(`${API_URL}/check-auth`, {credentials: 'include'});
+            const data = await res.json();
+            if (!data.authenticated || data.user.role !== 'admin') {
+                window.location.href = 'login.html';
+                return false;
+            }
+            document.getElementById('adminName').textContent = data.user.full_name;
+            return true;
+        }
+        
+        // Setup Drag & Drop
+        function setupDragDrop(dropZoneId, fileInputId, onFileSelect) {
+            const dropZone = document.getElementById(dropZoneId);
+            const fileInput = document.getElementById(fileInputId);
+            
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+            
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    onFileSelect({ target: fileInput });
+                }
+            });
+            
+            fileInput.addEventListener('change', onFileSelect);
+        }
+        
+        setupDragDrop('addDropZone', 'addImageFile', handleAddImageSelect);
+        setupDragDrop('editDropZone', 'editImageFile', handleEditImageSelect);
+        
+        function handleAddImageSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                addSelectedFile = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('addImagePreview').src = e.target.result;
+                    document.getElementById('addImagePreview').style.display = 'block';
+                    document.getElementById('addImagePlaceholder').style.display = 'none';
+                    document.getElementById('addFileInfo').textContent = `ไฟล์ที่เลือก: ${file.name}`;
+                    document.getElementById('addUploadBtn').disabled = false;
+                    document.getElementById('addClearBtn').style.display = 'inline-block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function handleEditImageSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                editSelectedFile = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('editImagePreview').src = e.target.result;
+                    document.getElementById('editImagePreview').style.display = 'block';
+                    document.getElementById('editImagePlaceholder').style.display = 'none';
+                    document.getElementById('editFileInfo').textContent = `ไฟล์ที่เลือก: ${file.name}`;
+                    document.getElementById('editUploadBtn').disabled = false;
+                    document.getElementById('editClearBtn').style.display = 'inline-block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function clearAddImage() {
+            addSelectedFile = null;
+            document.getElementById('addImageFile').value = '';
+            document.getElementById('addImagePreview').style.display = 'none';
+            document.getElementById('addImagePlaceholder').style.display = 'flex';
+            document.getElementById('addImageUrl').value = '';
+            document.getElementById('addFileInfo').textContent = 'ยังไม่ได้เลือกรูป';
+            document.getElementById('addUploadBtn').disabled = true;
+            document.getElementById('addClearBtn').style.display = 'none';
+        }
+        
+        function clearEditImage() {
+            editSelectedFile = null;
+            document.getElementById('editImageFile').value = '';
+            document.getElementById('editImagePreview').style.display = 'none';
+            document.getElementById('editImagePlaceholder').style.display = 'flex';
+            document.getElementById('editImageUrl').value = '';
+            document.getElementById('editFileInfo').textContent = 'ยังไม่ได้เลือกรูป';
+            document.getElementById('editUploadBtn').disabled = true;
+            document.getElementById('editClearBtn').style.display = 'none';
+        }
+        
+        async function uploadAddImage() {
+            if (!addSelectedFile) return;
+            
+            const formData = new FormData();
+            formData.append('image', addSelectedFile);
+            
+            const btn = document.getElementById('addUploadBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังอัปโหลด...';
+            
+            try {
+                const res = await fetch(`${API_URL}/upload-image`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('addImageUrl').value = data.image_url;
+                    document.getElementById('addFileInfo').innerHTML = `<span style="color: green;">✅ อัปโหลดสำเร็จ!</span>`;
+                    addSelectedFile = null;
+                    document.getElementById('addUploadBtn').style.display = 'none';
+                    document.getElementById('addClearBtn').style.display = 'inline-block';
+                } else {
+                    alert(data.error || 'เกิดข้อผิดพลาด');
+                }
+            } catch (err) {
+                alert('เกิดข้อผิดพลาดในการอัปโหลด');
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-upload"></i> อัปโหลดรูป';
+        }
+        
+        async function uploadEditImage() {
+            if (!editSelectedFile) return;
+            
+            const formData = new FormData();
+            formData.append('image', editSelectedFile);
+            
+            const btn = document.getElementById('editUploadBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังอัปโหลด...';
+            
+            try {
+                const res = await fetch(`${API_URL}/upload-image`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('editImageUrl').value = data.image_url;
+                    document.getElementById('editFileInfo').innerHTML = `<span style="color: green;">✅ อัปโหลดสำเร็จ!</span>`;
+                    editSelectedFile = null;
+                    document.getElementById('editUploadBtn').style.display = 'none';
+                    document.getElementById('editClearBtn').style.display = 'inline-block';
+                } else {
+                    alert(data.error || 'เกิดข้อผิดพลาด');
+                }
+            } catch (err) {
+                alert('เกิดข้อผิดพลาดในการอัปโหลด');
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-upload"></i> อัปโหลดรูป';
+        }
+        
+        async function loadStats() {
+            const res = await fetch(`${API_URL}/dashboard-stats`, {credentials: 'include'});
+            const data = await res.json();
+            
+            document.getElementById('totalEquipment').textContent = data.stats.total || 0;
+            document.getElementById('availableEquipment').textContent = data.stats.available || 0;
+            document.getElementById('borrowedEquipment').textContent = data.stats.borrowed || 0;
+            
+            // โหลดรายการเกินกำหนดคืน
+            const overdueRes = await fetch(`${API_URL}/overdue`, {credentials: 'include'});
+            const overdue = await overdueRes.json();
+            
+            document.getElementById('overdueCount').textContent = overdue.length;
+            
+            const overdueAlert = document.getElementById('overdueAlert');
+            const overdueList = document.getElementById('overdueList');
+            
+            if (overdue.length > 0) {
+                overdueAlert.style.display = 'block';
+                overdueList.innerHTML = overdue.map(o => `
+                    <div class="overdue-item">
+                        <span><strong>${o.equipment_name}</strong> - ผู้ยืม: ${o.borrower_name}</span>
+                        <span style="color: #dc3545;">เกินกำหนด: ${o.return_due_date}</span>
+                    </div>
+                `).join('');
+            } else {
+                overdueAlert.style.display = 'none';
+            }
+        }
+        
+        async function loadEquipment() {
+            const res = await fetch(`${API_URL}/equipment`, {credentials: 'include'});
+            const equipment = await res.json();
+            renderEquipment(equipment);
+        }
+        
+        async function searchEquipment() {
+            const query = document.getElementById('searchInput').value;
+            const status = document.getElementById('statusFilter').value;
+            
+            let url = `${API_URL}/equipment/search?q=${encodeURIComponent(query)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+            
+            const res = await fetch(url, {credentials: 'include'});
+            const equipment = await res.json();
+            renderEquipment(equipment);
+        }
+        
+        function filterEquipment() {
+            searchEquipment();
+        }
+        
+        function renderEquipment(equipment) {
+            const tbody = document.getElementById('equipmentTable');
+            tbody.innerHTML = equipment.map(eq => {
+                const imageHtml = eq.image 
+                    ? `<img src="${eq.image}" class="equipment-image" alt="รูป">`
+                    : `<div class="equipment-image-placeholder"><i class="fas fa-box"></i></div>`;
+                
+                let actionButtons = '';
+                if (eq.status === 'ถูกยืม') {
+                    actionButtons = `
+                        <button class="btn-return" onclick="adminReturnEquipment('${eq.id}')">คืน</button>
+                        <button class="btn-edit" onclick="openEditModal(${eq.id}, '${eq.name}', '${eq.category}', '${eq.brand || ''}', '${eq.status}', '${eq.location || ''}', '${eq.image || ''}')">แก้ไข</button>
+                        <button class="btn-sell" onclick="sellEquipment('${eq.id}')"><i class="fas fa-shopping-cart"></i> ขาย</button>
+                    `;
+                } else {
+                    actionButtons = `
+                        <button class="btn-edit" onclick="openEditModal(${eq.id}, '${eq.name}', '${eq.category}', '${eq.brand || ''}', '${eq.status}', '${eq.location || ''}', '${eq.image || ''}')">แก้ไข</button>
+                        <button class="btn-sell" onclick="sellEquipment('${eq.id}')"><i class="fas fa-shopping-cart"></i> ขาย</button>
+                    `;
+                }
+                
+                return `
+                    <tr>
+                        <td>${imageHtml}</td>
+                        <td>${eq.id}</td>
+                        <td>${eq.name}</td>
+                        <td>${eq.category}</td>
+                        <td>${eq.brand || '-'}</td>
+                        <td>${eq.status}</td>
+                        <td>${eq.location || '-'}</td>
+                        <td>${actionButtons}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        async function loadHistory() {
+            const res = await fetch(`${API_URL}/borrow-history`, {credentials: 'include'});
+            const history = await res.json();
+            
+            const tbody = document.getElementById('historyTable');
+            tbody.innerHTML = history.map(h => `
+                <tr>
+                    <td>${h.id}</td>
+                    <td>${h.equipment_name}</td>
+                    <td>${h.borrower_name}</td>
+                    <td>${h.borrow_date || '-'}</td>
+                    <td>${h.return_due_date || '-'}</td>
+                    <td>${h.actual_return_date || '-'}</td>
+                    <td>${h.status}</td>
+                </tr>
+            `).join('');
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            
+            if (tabName === 'equipment') loadEquipment();
+            if (tabName === 'history') loadHistory();
+            if (tabName === 'sales') loadSales();
+        }
+        
+        async function loadSales() {
+            const res = await fetch(`${API_URL}/sales-history`, {credentials: 'include'});
+            const sales = await res.json();
+            
+            const tbody = document.getElementById('salesTable');
+            if (sales.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #666;">ยังไม่มีประวัติการขาย</td></tr>';
+            } else {
+                tbody.innerHTML = sales.map(s => `
+                    <tr>
+                        <td>${s.equipment_id || '-'}</td>
+                        <td>${s.equipment_name || '-'}</td>
+                        <td>${s.category || '-'}</td>
+                        <td>${s.brand || '-'}</td>
+                        <td>${s.buyer_name || '-'}</td>
+                        <td>${s.seller_name || '-'}</td>
+                        <td>${s.sell_date || '-'}</td>
+                        <td><span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 3px;">${s.status || '-'}</span></td>
+                    </tr>
+                `).join('');
+            }
+        }
+        
+        // Add Equipment
+        document.getElementById('addEquipmentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                id: document.getElementById('equipmentId').value,
+                name: document.getElementById('equipmentName').value,
+                category: document.getElementById('equipmentCategory').value,
+                brand: document.getElementById('equipmentBrand').value,
+                status: document.getElementById('equipmentStatus').value,
+                location: document.getElementById('equipmentLocation').value,
+                image: document.getElementById('addImageUrl').value
+            };
+            
+            const res = await fetch(`${API_URL}/equipment`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify(data)
+            });
+            
+            if (res.ok) {
+                alert('เพิ่มครุภัณฑ์สำเร็จ!');
+                e.target.reset();
+                clearAddImage();
+                loadEquipment();
+                loadStats();
+            } else {
+                const err = await res.json();
+                alert(err.error || 'เกิดข้อผิดพลาด');
+            }
+        });
+        
+        function openEditModal(id, name, category, brand, status, location, image) {
+            document.getElementById('editEquipmentId').value = id;
+            document.getElementById('editName').value = name;
+            document.getElementById('editCategory').value = category;
+            document.getElementById('editBrand').value = brand;
+            document.getElementById('editStatus').value = status;
+            document.getElementById('editLocation').value = location;
+            document.getElementById('editImageUrl').value = image || '';
+            editSelectedFile = null;
+            
+            // Show current image
+            if (image) {
+                document.getElementById('editImagePreview').src = image;
+                document.getElementById('editImagePreview').style.display = 'block';
+                document.getElementById('editImagePlaceholder').style.display = 'none';
+                document.getElementById('editFileInfo').innerHTML = `<span style="color: green;">✅ มีรูปอยู่แล้ว</span>`;
+                document.getElementById('editUploadBtn').style.display = 'none';
+                document.getElementById('editClearBtn').style.display = 'inline-block';
+            } else {
+                document.getElementById('editImagePreview').style.display = 'none';
+                document.getElementById('editImagePlaceholder').style.display = 'flex';
+                document.getElementById('editFileInfo').textContent = 'ยังไม่ได้เลือกรูป';
+                document.getElementById('editUploadBtn').style.display = 'inline-block';
+                document.getElementById('editUploadBtn').disabled = true;
+                document.getElementById('editClearBtn').style.display = 'none';
+            }
+            
+            document.getElementById('editModal').style.display = 'flex';
+        }
+        
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+        
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editEquipmentId').value;
+            const data = {
+                name: document.getElementById('editName').value,
+                category: document.getElementById('editCategory').value,
+                brand: document.getElementById('editBrand').value,
+                status: document.getElementById('editStatus').value,
+                location: document.getElementById('editLocation').value,
+                image: document.getElementById('editImageUrl').value
+            };
+            
+            const res = await fetch(`${API_URL}/equipment/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify(data)
+            });
+            
+            if (res.ok) {
+                closeEditModal();
+                loadEquipment();
+                loadStats();
+            } else {
+                const err = await res.json();
+                alert(err.error || 'เกิดข้อผิดพลาด');
+            }
+        });
+        
+        async function sellEquipment(id) {
+            const buyerName = prompt('กรอกชื่อผู้ซื้อ (หรือกด Cancel เพื่อยกเลิก):');
+            if (!buyerName || buyerName.trim() === '') {
+                alert('กรุณากรอกชื่อผู้ซื้อ');
+                return;
+            }
+            
+            if (!confirm(`คุณต้องการขายครุภัณฑ์นี้ให้ ${buyerName} หรือไม่?`)) return;
+            
+            const res = await fetch(`${API_URL}/sell`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({
+                    equipment_id: id,
+                    buyer_name: buyerName.trim()
+                })
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                alert(data.message || 'ขายสินค้าสำเร็จ!');
+                loadEquipment();
+                loadStats();
+            } else {
+                const err = await res.json();
+                alert(err.error || 'เกิดข้อผิดพลาด');
+            }
+        }
+        
+        async function adminReturnEquipment(id) {
+            if (!confirm('คุณต้องการคืนครุภัณฑ์นี้หรือไม่?')) return;
+            
+            const data = {
+                actual_return_date: new Date().toISOString().split('T')[0]
+            };
+            
+            const res = await fetch(`${API_URL}/return-by-equipment/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify(data)
+            });
+            
+            if (res.ok) {
+                loadEquipment();
+                loadStats();
+                alert('คืนครุภัณฑ์สำเร็จ!');
+            } else {
+                const err = await res.json();
+                alert(err.error || 'เกิดข้อผิดพลาด');
+            }
+        }
+        
+        async function logout() {
+            await fetch(`${API_URL}/logout`, {method: 'POST', credentials: 'include'});
+            window.location.replace('login.html');
+        }
+        
+        // Reset form on page load
+        document.getElementById('addEquipmentForm').addEventListener('reset', () => {
+            setTimeout(clearAddImage, 100);
+        });
+        
+        window.onload = async () => {
+            if (await checkAuth()) {
+                loadEquipment();
+                loadStats();
+            }
+        };
+    </script>
+</body>
+</html>
